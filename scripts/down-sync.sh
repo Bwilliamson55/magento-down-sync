@@ -204,6 +204,7 @@ if [[ preserve_core_config -ne 1 ]]; then
     #      #*: means - starting on the left and moving right, select everything from : onward (Second half)
         KEY=${i%:*};
         VAL=${i#*:};
+        # Remove the following WHERE path LIKE \"%web/%url%\" OR path LIKE \"%cookie%\" 's if you want to replace all instances of the key in the config table
         if [[ two_remotes -eq 1 ]]; then
             ssh $remote2_ssh_user@$remote2_ssh_host ${remote2_n98_command} --root-dir=${remote2_magento_root} db:query "UPDATE core_config_data SET \`value\` = REPLACE(\`value\`, '${KEY}', '${VAL}') WHERE path LIKE \"%web/%url%\" OR path LIKE \"%cookie%\""
         else

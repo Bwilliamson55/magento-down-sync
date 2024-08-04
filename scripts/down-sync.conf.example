@@ -1,0 +1,155 @@
+# Configuration file for down-sync.sh
+# Copy this to down-sync.conf and modify to suit
+# ALL directories are assumed to have a trailing slash eg ~/dev/
+# Do not use your home shortcut, just in case. eg ~ should be /home/bwilliamson/ 
+
+#### Update or replace all values that CONTAIN 'UPDATEME'! ####
+
+# Local details #######################
+local_uses_ddev=1
+local_db_name=dbUPDATEME
+local_zcat_cmd=zcat
+# DANGER - always have a backup of your local db before running this script
+skip_local_db_dump=0
+
+# The filename that will be used locally (without extension)
+local_db_dump_file_name=local_db_dump
+# DB dump directory on host
+local_db_dump_dir=/home/UPDATEME/dev/dbdump/
+# Magento root INSIDE the container if using ddev (Default is /var/www/html/)
+local_magento_root=/var/www/html/
+# The path to your Magento projects pub/media folder
+local_media_path=/home/UPDATEME/dev/m2/UPDATEME/pub/media/
+# n98 command INSIDE the container if using ddev
+local_n98_command=/var/www/html/n98-magerun2.phar
+
+# Remote details - if you use Adobe commerce, these example values will be ALMOST correct
+# You MUST have a valid ssh config on the machine running this script, with a valid linked, for the target host
+remote_db_dump_file_name=stage_db_dump
+remote_ssh_user=1.ent-UPDATEME-staging
+remote_ssh_host=ssh.us-5.magento.cloud.UPDATEME
+remote_ssh_port=22
+remote_magento_root=/app/UPDATEME_stg/
+remote_media_path=${remote_magento_root}"pub/media/"
+# Your n98 command on the remote server will probably be in the bin directory, but ours is in var
+remote_n98_command=/app/UPDATEME_stg/var/n98-magerun2.phar
+# If set to 0 the remote db dump used will be deleted after down sync is complete
+keep_remote_backups=1
+
+# Backup details #######################
+# Skip to restore if something went wrong - this will skip downloading the remote db dump
+skip_to_restore=0
+backup_file_name=stage_db_dump_combined_20240608141930.sql.gz.UPDATEME
+backup_file_location=/home/UPDATEME/
+
+# Email scrambler
+# All email addresses, if enabled, will be appended with a random string and the domain in anon_email_domain
+anon_email=1
+anon_email_domain=example.com
+exclude_email_domain=myPrimaryDomainUPDATEME.com
+
+# Sync pub/media with exclusions
+sync_media=1
+# Add directories or glob patterns to exclude from media sync - no spaces, comma separated
+exclude_media_dirs="import,catalog/product/cache,processor,analytics,tmp,downloadable,processor,*.zip,*.xml,*.4AU/*,*magefan_blog*"
+
+# Preserve core config table and restore after downsync? DONT use this on first sync
+preserve_core_config=0
+
+# Replacements for core_config_data web*url and cookie paths - this can be partial strings. 
+# The values are like key:value, so any web/url or cookie config values with .com, for example, will be replaced with .test
+# The replacement cmd in down-sync is current constrained by this where clause: WHERE path LIKE \"%web/%url%\" OR path LIKE \"%cookie%\", remove this to replace across all config values
+replacement_array=( '.com:.test'
+                    'myStagingSubdomainUPDATEME.:'
+                    'myPrimaryDomainUPDATEME.co.uk:myPrimaryDomainUPDATEME.test.co.uk'
+                    'myPrimaryDomainUPDATEME.eu:myPrimaryDomainUPDATEME.test.eu'
+                    '/stage/:/dev/')
+
+# Remove values of core_config_data rows where path like (% is wildcard)
+# This ensures we don't accidentally use the staging/prod API keys for payments or other sensistive stuff
+removal_array=( 'authorize_net/%key'
+                'connector_api_credentials%'
+                'connector_dynamic_content%'
+                'payment/affirm_gateway%'
+                'payment/amazon_payment%'
+                'payment/authnetcim/%_key'
+                'payment/payflow%pwd'
+                'paypal/wpp/%password'
+                'swat/%' )
+
+# Enter the following as scope::scopeId::path::value for setting config values
+# This is where you can add configuration values specifically. 
+# This uses n98's core:config:set, so existing values are updated and new values are added
+addition_array=( 'default::0::payment/checkmo/active::1'
+                 'default::0::payment/authnetcim_ach/active::0'
+                  'default::0::services_connector/services_id/environment_id::UPDATEMEIFYOUUSELIVESEARCH'
+                  'default::0::services_connector/services_id/environment_name::UPDATEMEIFYOUUSELIVESEARCH 2' )
+
+
+### You most likely do not need to change anything below this line ###
+######################################################################
+
+#Strip Config
+# See https://github.com/netz98/n98-magerun2#stripped-database-dump for strip options
+# Strip Personally Identifiable info in all cases possible! @trade strips most PII
+local_strip_string="@stripped @trade @idx @klarna @log @oauth @quotes @replica @sales @search @sessions @temp @newrelic_reporting"
+remote_strip_string="@stripped @trade @idx @klarna @log @oauth @quotes @replica @sales @search @sessions @temp @newrelic_reporting"
+# Excluding many live search tables
+exclude_tables="magento_operation cde_categories_feed_cl cde_categories_feed_index_batches cde_categories_feed_index_sequence cde_categories_feed_sync_batches cde_categories_feed_sync_sequence cde_category_permissions_feed cde_category_permissions_feed_cl cde_category_permissions_feed_index_batches cde_category_permissions_feed_index_sequence cde_category_permissions_feed_sync_batches cde_category_permissions_feed_sync_sequence cde_product_attributes_feed cde_product_attributes_feed_cl cde_product_attributes_feed_index_batches cde_product_attributes_feed_index_sequence cde_product_attributes_feed_sync_batches cde_product_attributes_feed_sync_sequence cde_product_overrides_feed cde_product_overrides_feed_cl cde_product_overrides_feed_cl_index_batches cde_product_overrides_feed_cl_index_sequence cde_product_overrides_feed_index_batches cde_product_overrides_feed_index_sequence cde_product_overrides_feed_sync_batches cde_product_overrides_feed_sync_sequence cde_product_prices_feed cde_product_prices_feed_cl cde_product_prices_feed_cl_index_batches cde_product_prices_feed_cl_index_sequence cde_product_prices_feed_index_batches cde_product_prices_feed_index_sequence cde_product_prices_feed_sync_batches cde_product_prices_feed_sync_sequence cde_product_variants_feed cde_product_variants_feed_cl cde_product_variants_feed_cl_index_batches cde_product_variants_feed_cl_index_sequence cde_product_variants_feed_index_batches cde_product_variants_feed_index_sequence cde_product_variants_feed_sync_batches cde_product_variants_feed_sync_sequence cde_products_feed cde_products_feed_cl cde_products_feed_cl_index_batches cde_products_feed_cl_index_sequence cde_products_feed_index_batches cde_products_feed_index_sequence cde_products_feed_sync_batches cde_products_feed_sync_sequence catalog_data_exporter_categories catalog_data_exporter_categories_cl catalog_data_exporter_categories_cl_index_batches catalog_data_exporter_categories_cl_index_sequence catalog_data_exporter_categories_index_batches catalog_data_exporter_categories_index_sequence catalog_data_exporter_categories_sync_batches catalog_data_exporter_categories_sync_sequence catalog_data_exporter_category_permissions catalog_data_exporter_category_permissions_cl catalog_data_exporter_category_permissions_cl_index_batches catalog_data_exporter_category_permissions_cl_index_sequence catalog_data_exporter_category_permissions_index_batches catalog_data_exporter_category_permissions_index_sequence catalog_data_exporter_category_permissions_sync_batches catalog_data_exporter_category_permissions_sync_sequence catalog_data_exporter_product_attributes catalog_data_exporter_product_attributes_cl catalog_data_exporter_product_attributes_cl_index_batches catalog_data_exporter_product_attributes_cl_index_sequence catalog_data_exporter_product_attributes_index_batches catalog_data_exporter_product_attributes_index_sequence catalog_data_exporter_product_attributes_sync_batches catalog_data_exporter_product_attributes_sync_sequence catalog_data_exporter_product_overrides catalog_data_exporter_product_overrides_cl catalog_data_exporter_product_overrides_index_batches catalog_data_exporter_product_overrides_index_sequence catalog_data_exporter_product_overrides_sync_batches catalog_data_exporter_product_overrides_sync_sequence catalog_data_exporter_product_prices catalog_data_exporter_product_prices_cl catalog_data_exporter_product_prices_cl_index_batches catalog_data_exporter_product_prices_cl_index_sequence catalog_data_exporter_product_prices_index_batches catalog_data_exporter_product_prices_index_sequence catalog_data_exporter_product_prices_sync_batches catalog_data_exporter_product_prices_sync_sequence catalog_data_exporter_product_variants catalog_data_exporter_product_variants_cl catalog_data_exporter_product_variants_cl_index_batches catalog_data_exporter_product_variants_cl_index_sequence catalog_data_exporter_product_variants_index_batches catalog_data_exporter_product_variants_index_sequence catalog_data_exporter_product_variants_sync_batches catalog_data_exporter_product_variants_sync_sequence catalog_data_exporter_products catalog_data_exporter_products_cl catalog_data_exporter_products_cl_index_batches catalog_data_exporter_products_cl_index_sequence catalog_data_exporter_products_index_batches catalog_data_exporter_products_index_sequence catalog_data_exporter_products_sync_batches catalog_data_exporter_products_sync_sequence data_exporter_uuid sales_data_exporter_order_statuses sales_data_exporter_order_statuses_index_batches sales_data_exporter_order_statuses_index_sequence sales_data_exporter_orders sales_data_exporter_orders_index_batches sales_data_exporter_orders_index_sequence sales_order_data_exporter_cl sales_order_data_exporter_cl_index_batches sales_order_data_exporter_cl_index_sequence sales_order_status_data_exporter_cl scopes_customergroup_data_exporter scopes_customergroup_data_exporter_cl scopes_customergroup_data_exporter_index_batches scopes_customergroup_data_exporter_index_sequence scopes_customergroup_data_exporter_sync_batches scopes_customergroup_data_exporter_sync_sequence scopes_website_data_exporter scopes_website_data_exporter_cl scopes_website_data_exporter_index_batches scopes_website_data_exporter_index_sequence scopes_website_data_exporter_sync_batches scopes_website_data_exporter_sync_sequence store_data_exporter_cl stores_data_exporter stores_data_exporter_index_batches stores_data_exporter_index_sequence"
+
+# List of tables and corresponding email columns for anonymization eg "table:column"
+email_anonymization_tables=("admin_user:email"
+                            "customer_entity:email"
+                            "customer_grid_flat:email"
+                            "email_template:template_sender_email"
+                            "integration:email"
+                            "magento_giftregistry_person:email"
+                            "magento_invitation:email"
+                            "magento_rma:customer_custom_email"
+                            "magento_sales_creditmemo_grid_archive:customer_email"
+                            "magento_sales_invoice_grid_archive:customer_email"
+                            "magento_sales_order_grid_archive:customer_email"
+                            "magento_sales_shipment_grid_archive:customer_email"
+                            "magento_scheduled_operations:email_receiver"
+                            "magento_scheduled_operations:email_sender"
+                            "magento_scheduled_operations:email_template"
+                            "magento_scheduled_operations:email_copy"
+                            "magento_scheduled_operations:email_copy_method"
+                            "newsletter_queue:newsletter_sender_email"
+                            "newsletter_subscriber:subscriber_email"
+                            "newsletter_template:template_sender_email"
+                            "quote:customer_email"
+                            "quote_address:email"
+                            "sales_creditmemo_grid:customer_email"
+                            "sales_invoice_grid:customer_email"
+                            "sales_order:customer_email"
+                            "sales_order_address:email"
+                            "sales_order_grid:customer_email"
+                            "sales_shipment_grid:customer_email")
+
+# Two remotes (1 or 0) will transfer from remote 1 to remote 2, using local details as a middle man
+# DANGER - always have a backup of your remote db before running this script
+two_remotes=0
+
+# Remote 2 details #######################
+# ONLY needed if syncing across two remote servers, see the two_remotes boolean flag above
+# See the remote details above for more info
+# This is usually used for syncing Prod to Staging, so BE CAREFUL
+remote2_ssh_user=remote2
+remote2_ssh_host=remote2.cloud
+remote2_ssh_port="22"
+remote2_magento_root=/app/remote2/
+remote2_media_path=${remote_magento_root}"pub/media/"
+remote2_n98_command=/app/remote2/bin/n98-magerun2
+
+# Tests #######################
+# These commands are required in the current script and are tested every run
+required_cmds_test=(
+    "mysql"
+    "mysqldump"
+    "zcat"
+    "ssh"
+    "pv"
+    "rsync"
+    "cut"
+    "du")
