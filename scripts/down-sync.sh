@@ -188,9 +188,11 @@ fi
 if [[ keep_remote_backups -eq 0 ]]; then
     _warning "Removing remote backup from local filesystem"
     rm ${remote_backup_file_path}
+    rm ${remote_schema_backup_file}
+    rm ${remote_data_backup_file}
     _errorExitPromptNoSuccessMsg $? "Removal of locally stored remote DB backup Failed! You'll need to remove this manually. Continue anyway?"
     if [[ two_remotes -eq 1 ]]; then
-        ssh $remote2_ssh_user@$remote2_ssh_host "rm /tmp/${remote_db_dump_file_name}_${date_stamp}.sql.gz"
+        ssh $remote2_ssh_user@$remote2_ssh_host "rm /tmp/${remote_db_dump_file_name}_combined_${date_stamp}.sql.gz"
         _errorExitPromptNoSuccessMsg $? "Removal of remotely stored remote DB backup Failed! You'll need to remove this manually. Continue anyway?"
     fi
 fi
