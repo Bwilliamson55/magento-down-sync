@@ -176,16 +176,16 @@ If this takes a long time for you, re-consider the number of tables you're strip
 ![Anonymizing email addresses screenshot](doc_assets/down-sync-09.png)
 
 ### Syncs media files
-If you have `sync_media` set to `1` in the .conf, the script will use `rsync` to incrementally transfer the configured path (likely your pub/media path) from the remote server to your locally configured path. `rsync -avz` is used, so only new or changed files will be transferred.
+If you have `sync_media` set to `1` in the .conf, the script will use `rsync` to incrementally transfer the configured path (likely your pub/media path) from the remote server to your locally configured path. `rsync -avz` is used, so only new or changed files will be transferred.  
+
 ![Rsyncing remote files to local screenshot](doc_assets/down-sync-10.png)
+
 > Protip: run the `just-download.sh` script before the `down-sync.sh` script, to test your media download exclusions. The `pub/media` directory can get pretty bloated, and you may not have the space, or time, or patience, to deal with that. You can CTRL+C the `just-download.sh` script at any time while it's running to stop it, and it will pick up where it left off next time you run it. 
 
 ### Gives timestamps and time elapsed
 In the example screenshot, it took my machine 11 minutes to complete the down-sync.  
 You can see the rough size of each step taken, if you want to get the gist of how long it may take you based on your environment's size. Keep in mind, the table exclusions save a LOT of space, and I'm using an NVME drive, so YMMV.  
 Also, if I hadn't downloaded the media earlier via `just-download.sh`, this would have taken a lot longer. But those two processes do not need to be run together.
-
-/end of "what it do" section
 
 ---
 
