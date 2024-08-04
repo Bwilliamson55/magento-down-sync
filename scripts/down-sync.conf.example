@@ -1,5 +1,10 @@
 # Configuration file for down-sync.sh
-# Copy this to down-sync.conf and modify to suit
+
+###### Copy this to down-sync.conf and modify to suit #######
+
+### Also recommend saving the conf once working, named after your environment,
+###### eg down-sync.conf.staging for easier configuration switching ###
+
 # ALL directories are assumed to have a trailing slash eg ~/dev/
 # Do not use your home shortcut, just in case. eg ~ should be /home/bwilliamson/ 
 
